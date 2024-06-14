@@ -1,46 +1,44 @@
 #!/bin/bash
 
-# Source the common script for shared functions
-source /vagrant/common.sh
+LOG_FILE="/vagrant/logs/master.log"
+exec > >(tee -i $LOG_FILE)
+exec 2>&1
 
-# Initialize the Kubernetes master node
+source /vagrant/scripts/common.sh
+
+log "INFO" "Starting master.sh script..." $BLUE
+
 initialize_kubernetes_master() {
+  log "INFO" "Initializing Kubernetes master node..." $BLUE
   sudo kubeadm init --control-plane-endpoint=$MASTER_HOSTNAME
 
-  # Setup kubeconfig for the root user
+  log "INFO" "Setting up kubeconfig for the root user..." $BLUE
   mkdir -p $HOME/.kube
   sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
   sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
   export KUBECONFIG=$HOME/.kube/config
+  cp $HOME/.kube/config /vagrant/configs/
+
 }
 
-# Save the join command for worker nodes
 save_join_command() {
   local config_path="/vagrant/configs"
 
-  # Ensure the configs directory exists and is clean
-  if [ -d $config_path ]; then
-    rm -f $config_path/*
-  else
-    mkdir -p $config_path
-  fi
-
-  # Copy the admin config and generate the join command
-  cp -i /etc/kubernetes/admin.conf $config_path/config
+  log "INFO" "Saving join command for worker nodes..." $BLUE
+  mkdir -p $config_path
   kubeadm token create --print-join-command > $config_path/join.sh
   chmod +x $config_path/join.sh
 
-  echo "Master is ready, and the join command is saved to /vagrant/configs/join_master.sh"
+  log "INFO" "Master is ready, and the join command is saved to /vagrant/configs/join.sh" $GREEN
 }
 
-# Install the Calico network plugin
 install_network_plugin() {
+  log "INFO" "Installing Calico network plugin..." $BLUE
   kubectl apply -f $CNI_CALICO
 }
 
-# Setup kubeconfig for the vagrant user
 setup_vagrant_user_kubectl() {
+  log "INFO" "Setting up kubeconfig for the vagrant user..." $BLUE
   sudo -i -u vagrant bash <<EOF
 whoami
 mkdir -p /home/vagrant/.kube
@@ -50,14 +48,16 @@ echo "alias k='kubectl'" >> ~/.bashrc
 EOF
 }
 
-# Install the metrics server
 install_metrics_server() {
+  log "INFO" "Installing metrics server..." $BLUE
   kubectl apply -f $METRICS_SERVER
 }
 
-# Main script execution
+initialize_kubernetes_environment
 initialize_kubernetes_master
 save_join_command
 install_network_plugin
 setup_vagrant_user_kubectl
 install_metrics_server
+
+log "INFO" "Finished master.sh script." $BLUE

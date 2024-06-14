@@ -10,6 +10,11 @@ def render_template(template, variables)
 end
 
 Vagrant.configure("2") do |config|
+  # Ensure the logs directory exists
+  config.vm.provision "shell", inline: <<-SHELL
+    mkdir -p /vagrant/logs
+  SHELL
+
   # Enable and manage host entries
   config.hostmanager.enabled = true
   config.hostmanager.manage_host = true
@@ -46,7 +51,7 @@ Vagrant.configure("2") do |config|
       vmware.memory = memory
       vmware.cpus = cpus
     end
-    master.vm.provision "shell", path: "master.sh", env: {
+    master.vm.provision "shell", path: "scripts/master.sh", env: {
       "MASTER_IP" => master_ip,
       "MASTER_HOSTNAME" => master_hostname,
       "CNI_CALICO" => cni_calico,
@@ -67,7 +72,7 @@ Vagrant.configure("2") do |config|
         vmware.memory = memory
         vmware.cpus = cpus
       end
-      worker.vm.provision "shell", path: "node.sh", env: {
+      worker.vm.provision "shell", path: "scripts/node.sh", env: {
         "K8S_VERSION" => settings['k8s']['version']
       }
     end
