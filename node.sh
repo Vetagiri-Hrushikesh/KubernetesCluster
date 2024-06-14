@@ -1,20 +1,14 @@
 #!/bin/bash
 
-# Run common tasks
 source /vagrant/common.sh
 
-# config_path="/vagrant/configs"
+join_kubernetes_cluster() {
+  if [ -f /vagrant/configs/join.sh ]; then
+    sudo bash /vagrant/configs/join.sh
+  else
+    echo "Join script not found. Ensure the master node is provisioned and the join script is generated."
+  fi
+}
 
-# /bin/bash $config_path/join.sh -v
-
-# sudo -i -u vagrant bash << EOF
-
-# whoami
-# mkdir -p /home/vagrant/.kube
-# sudo cp -i $config_path/config /home/vagrant/.kube/
-# sudo chown 1000:1000 /home/vagrant/.kube/config
-# NODENAME=$(hostname -s)
-
-# kubectl label node $(hostname -s) node-role.kubernetes.io/worker=worker
-
-# EOF
+# Main script
+join_kubernetes_cluster
