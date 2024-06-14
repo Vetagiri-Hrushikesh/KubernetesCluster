@@ -79,5 +79,3 @@ sudo apt install -y kubelet kubeadm kubectl
 
 # Hold Kubernetes components at current version
 sudo apt-mark hold kubelet kubeadm kubectl
-
-# No need to join the cluster here, this will be handled after the master is ready

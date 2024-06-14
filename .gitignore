@@ -1,2 +1,3 @@
 .vagrant
 join_master.sh
+configs/
