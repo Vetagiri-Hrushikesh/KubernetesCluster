@@ -1,3 +1,4 @@
 .vagrant
 configs/
 logs/
+.DS_Store

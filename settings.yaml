@@ -17,3 +17,6 @@ cni:
   calico: "https://raw.githubusercontent.com/projectcalico/calico/<%= calico_version %>/manifests/calico.yaml"
 
 metrics_server: "https://raw.githubusercontent.com/techiescamp/kubeadm-scripts/main/manifests/metrics-server.yaml"
+
+dashboard:
+  version: "v2.7.0"

@@ -22,8 +22,8 @@ log() {
 
 log "INFO" "Starting test.sh script..." $BLUE
 
-cd /vagrant/configs || { log "ERROR" "Failed to change directory to /vagrant/configs" $RED; exit 1; }
-log "INFO" "Changed directory to /vagrant/configs" $BLUE
+cd ../configs || { log "ERROR" "Failed to change directory to ../configs" $RED; exit 1; }
+log "INFO" "Changed directory to ../configs" $BLUE
 
 sudo chmod +r config || { log "ERROR" "Failed to change permissions of config file" $RED; exit 1; }
 log "INFO" "Changed permissions of config file" $BLUE

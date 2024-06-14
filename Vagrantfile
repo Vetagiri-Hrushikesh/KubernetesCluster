@@ -77,4 +77,11 @@ Vagrant.configure("2") do |config|
       }
     end
   end
+
+  # After all nodes are provisioned, run the dashboard setup on the master node
+  config.vm.define "k8smaster" do |master|
+    master.vm.provision "shell", path: "scripts/dashboard.sh", env: {
+      "DASHBOARD_VERSION" => settings['dashboard']['version']
+    }
+  end
 end
