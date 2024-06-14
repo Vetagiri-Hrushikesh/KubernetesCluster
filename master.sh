@@ -3,7 +3,7 @@
 source /vagrant/common.sh
 
 initialize_kubernetes_master() {
-  sudo kubeadm init --control-plane-endpoint=k8smaster.learndocker.xyz
+  sudo kubeadm init --control-plane-endpoint=$MASTER_HOSTNAME
 
   mkdir -p $HOME/.kube
   sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
@@ -29,8 +29,7 @@ save_join_command() {
 }
 
 install_network_plugin() {
-  kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-  kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.0/manifests/calico.yaml
+  kubectl apply -f $CNI_CALICO
 }
 
 setup_vagrant_user_kubectl() {
@@ -44,10 +43,10 @@ EOF
 }
 
 install_metrics_server() {
-  kubectl apply -f https://raw.githubusercontent.com/techiescamp/kubeadm-scripts/main/manifests/metrics-server.yaml
+  kubectl apply -f $METRICS_SERVER
 }
 
-# Main script
+# # Main script
 initialize_kubernetes_master
 save_join_command
 install_network_plugin

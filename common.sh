@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Load settings from environment variables
+MASTER_IP=${MASTER_IP}
+CNI_CALICO=${CNI_CALICO}
+METRICS_SERVER=${METRICS_SERVER}
+K8S_VERSION=${K8S_VERSION}
+
 wait_for_dpkg_lock() {
   while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
     echo "Waiting for dpkg lock to be released..."
@@ -35,16 +41,19 @@ EOF
 }
 
 install_dependencies() {
+  wait_for_dpkg_lock
   sudo apt update
   sudo apt install -y curl gnupg2 software-properties-common apt-transport-https ca-certificates
 }
 
 enable_docker_repo() {
+  wait_for_dpkg_lock
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/docker.gpg
   sudo add-apt-repository "deb [arch=amd64,arm64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 }
 
 install_containerd() {
+  wait_for_dpkg_lock
   sudo apt update
   sudo apt install -y containerd
   sudo mkdir -p /etc/containerd
@@ -55,12 +64,14 @@ install_containerd() {
 }
 
 setup_kubernetes_repo() {
+  wait_for_dpkg_lock
   sudo mkdir -p /etc/apt/keyrings
-  curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-  echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+  curl -fsSL "https://pkgs.k8s.io/core:/stable:/v$K8S_VERSION/deb/Release.key" | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v$K8S_VERSION/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 }
 
 install_kubernetes_components() {
+  wait_for_dpkg_lock
   sudo apt update
   sudo apt install -y kubelet kubeadm kubectl
   sudo apt-mark hold kubelet kubeadm kubectl
@@ -70,7 +81,6 @@ install_kubernetes_components() {
 disable_swap
 load_kernel_modules
 set_kernel_parameters
-wait_for_dpkg_lock
 install_dependencies
 enable_docker_repo
 wait_for_dpkg_lock

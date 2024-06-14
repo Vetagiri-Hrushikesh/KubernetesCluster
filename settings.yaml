@@ -1,0 +1,19 @@
+master_ip: "192.168.1.103"
+worker_ips:
+  - "192.168.1.104"
+
+vm:
+  memory: 4096
+  cpus: 2
+
+k8s:
+  version: "1.28"
+
+docker:
+  repo: "https://download.docker.com/linux/ubuntu"
+
+cni:
+  calico_version: "v3.26.0"
+  calico: "https://raw.githubusercontent.com/projectcalico/calico/<%= calico_version %>/manifests/calico.yaml"
+
+metrics_server: "https://raw.githubusercontent.com/techiescamp/kubeadm-scripts/main/manifests/metrics-server.yaml"
