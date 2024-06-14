@@ -1,29 +1,41 @@
 require 'yaml'
 require 'erb'
 
+# Load settings from the YAML file
 settings = YAML.load_file('settings.yaml')
 
+# Helper method to render ERB templates with variables
 def render_template(template, variables)
   ERB.new(template).result_with_hash(variables)
 end
 
 Vagrant.configure("2") do |config|
+  # Enable and manage host entries
   config.hostmanager.enabled = true
   config.hostmanager.manage_host = true
 
+  # Shared folder between host and VM
   config.vm.synced_folder ".", "/vagrant", create: true
-  config.vm.boot_timeout = 600  # Increase timeout to 10 minutes
-  config.ssh.insert_key = true  # Ensure new SSH key is inserted
 
+  # Increase boot timeout to 10 minutes
+  config.vm.boot_timeout = 600
+
+  # Ensure new SSH key is inserted for security
+  config.ssh.insert_key = true
+
+  # Master and worker node configurations from settings
   master_ip = settings['master_ip']
   master_hostname = "k8smaster.learndocker.xyz"
   worker_ips = settings['worker_ips']
 
+  # VM resource settings
   memory = settings['vm']['memory']
   cpus = settings['vm']['cpus']
 
+  # Render CNI Calico URL with the specified version
   cni_calico = render_template(settings['cni']['calico'], { calico_version: settings['cni']['calico_version'] })
 
+  # Master node configuration
   config.vm.define "k8smaster" do |master|
     master.vm.box = "spox/ubuntu-arm"
     master.vm.hostname = master_hostname
@@ -43,6 +55,7 @@ Vagrant.configure("2") do |config|
     }
   end
 
+  # Worker nodes configuration
   worker_ips.each_with_index do |ip, index|
     config.vm.define "k8sworker#{index + 1}" do |worker|
       worker.vm.box = "spox/ubuntu-arm"
