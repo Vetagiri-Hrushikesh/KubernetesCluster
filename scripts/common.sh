@@ -81,8 +81,21 @@ install_dependencies() {
 enable_docker_repo() {
   wait_for_dpkg_lock
   log "INFO" "Adding Docker GPG key and repository..." $BLUE
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/docker.gpg
-  sudo add-apt-repository "deb [arch=amd64,arm64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+  sudo install -m 0755 -d /etc/apt/keyrings
+  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  sudo chmod a+r /etc/apt/keyrings/docker.asc
+  echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null""
+}
+
+# Install Docker
+install_docker() {
+  wait_for_dpkg_lock
+  log "INFO" "Installing Docker..." $BLUE
+  sudo apt-get update
+  sudo apt-get install -y docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin
 }
 
 # Install and configure containerd
@@ -122,6 +135,7 @@ initialize_kubernetes_environment() {
   set_kernel_parameters
   install_dependencies
   enable_docker_repo
+  install_docker
   install_containerd
   setup_kubernetes_repo
   install_kubernetes_components

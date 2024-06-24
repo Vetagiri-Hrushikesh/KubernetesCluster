@@ -2,3 +2,4 @@
 configs/
 logs/
 .DS_Store
+.vscode/

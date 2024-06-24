@@ -60,7 +60,7 @@ Vagrant.configure("2") do |config|
     }
   end
 
-  # Worker nodes configuration
+  # # Worker nodes configuration
   worker_ips.each_with_index do |ip, index|
     config.vm.define "k8sworker#{index + 1}" do |worker|
       worker.vm.box = "spox/ubuntu-arm"
@@ -79,9 +79,9 @@ Vagrant.configure("2") do |config|
   end
 
   # After all nodes are provisioned, run the dashboard setup on the master node
-  config.vm.define "k8smaster" do |master|
-    master.vm.provision "shell", path: "scripts/dashboard.sh", env: {
-      "DASHBOARD_VERSION" => settings['dashboard']['version']
-    }
-  end
+  # config.vm.define "k8smaster" do |master|
+  #   master.vm.provision "shell", path: "scripts/dashboard.sh", env: {
+  #     "DASHBOARD_VERSION" => settings['dashboard']['version']
+  #   }
+  # end
 end
