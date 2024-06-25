@@ -10,8 +10,11 @@ log "INFO" "Starting master.sh script..." $BLUE
 
 initialize_kubernetes_master() {
   log "INFO" "Initializing Kubernetes master node..." $BLUE
-  sudo kubeadm init --control-plane-endpoint=$MASTER_HOSTNAME
-
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    sudo kubeadm init --control-plane-endpoint=$MASTER_HOSTNAME
+  else
+    sudo kubeadm init --apiserver-advertise-address=$MASTER_IP --pod-network-cidr=192.168.0.0/16
+  fi
   log "INFO" "Setting up kubeconfig for the root user..." $BLUE
   mkdir -p $HOME/.kube
   sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config

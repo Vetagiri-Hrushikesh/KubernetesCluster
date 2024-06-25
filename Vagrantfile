@@ -9,6 +9,7 @@ def render_template(template, variables)
   ERB.new(template).result_with_hash(variables)
 end
 
+# Configure Vagrant
 Vagrant.configure("2") do |config|
   # Ensure the logs directory exists
   config.vm.provision "shell", inline: <<-SHELL
@@ -40,16 +41,31 @@ Vagrant.configure("2") do |config|
   # Render CNI Calico URL with the specified version
   cni_calico = render_template(settings['cni']['calico'], { calico_version: settings['cni']['calico_version'] })
 
+  # Determine provider based on platform
+  if RbConfig::CONFIG['host_os'].include?('darwin')
+    # macOS configuration
+    printf "Running Vagrant setup for macOS (Darwin)...\n"
+    provider = "vmware_desktop"
+    box = "spox/ubuntu-arm"
+    allowlist_verified = true
+  else
+    # Default to Windows/Linux configuration
+    printf "Running Vagrant setup for Windows/Linux...\n"
+    provider = "virtualbox"
+    box = "ubuntu/jammy64"
+    allowlist_verified = false
+  end
+
   # Master node configuration
   config.vm.define "k8smaster" do |master|
-    master.vm.box = "spox/ubuntu-arm"
+    master.vm.box = box
     master.vm.hostname = master_hostname
     master.vm.network "private_network", ip: master_ip
-    master.vm.provider "vmware_desktop" do |vmware|
-      vmware.gui = true
-      vmware.allowlist_verified = true
-      vmware.memory = memory
-      vmware.cpus = cpus
+    master.vm.provider provider do |p|
+      p.gui = true
+      p.allowlist_verified = allowlist_verified if provider == "vmware_desktop"
+      p.memory = memory
+      p.cpus = cpus
     end
     master.vm.provision "shell", path: "scripts/master.sh", env: {
       "MASTER_IP" => master_ip,
@@ -60,17 +76,17 @@ Vagrant.configure("2") do |config|
     }
   end
 
-  # # Worker nodes configuration
+  # Worker nodes configuration
   worker_ips.each_with_index do |ip, index|
     config.vm.define "k8sworker#{index + 1}" do |worker|
-      worker.vm.box = "spox/ubuntu-arm"
+      worker.vm.box = box
       worker.vm.hostname = "k8sworker#{index + 1}.learndocker.xyz"
       worker.vm.network "private_network", ip: ip
-      worker.vm.provider "vmware_desktop" do |vmware|
-        vmware.gui = true
-        vmware.allowlist_verified = true
-        vmware.memory = memory
-        vmware.cpus = cpus
+      worker.vm.provider provider do |p|
+        p.gui = true
+        p.allowlist_verified = allowlist_verified if provider == "vmware_desktop"
+        p.memory = memory
+        p.cpus = cpus
       end
       worker.vm.provision "shell", path: "scripts/node.sh", env: {
         "K8S_VERSION" => settings['k8s']['version']
@@ -79,9 +95,9 @@ Vagrant.configure("2") do |config|
   end
 
   # After all nodes are provisioned, run the dashboard setup on the master node
-  # config.vm.define "k8smaster" do |master|
-  #   master.vm.provision "shell", path: "scripts/dashboard.sh", env: {
-  #     "DASHBOARD_VERSION" => settings['dashboard']['version']
-  #   }
-  # end
+  config.vm.define "k8smaster" do |master|
+    master.vm.provision "shell", path: "scripts/dashboard.sh", env: {
+      "DASHBOARD_VERSION" => settings['dashboard']['version']
+    }
+  end
 end

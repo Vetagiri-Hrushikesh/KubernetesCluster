@@ -95,8 +95,30 @@ install_docker() {
   wait_for_dpkg_lock
   log "INFO" "Installing Docker..." $BLUE
   sudo apt-get update
-  sudo apt-get install -y docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin
+  sudo apt-get install -y docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin jq
 }
+
+# Function to configure Docker daemon
+configure_docker_daemon() {
+  local daemon_config="/etc/docker/daemon.json"
+  local registry_ip="49.207.7.11:5001"
+  
+  log "INFO" "Configuring Docker daemon with insecure registry $registry_ip..." $BLUE
+  
+  if [[ -f "$daemon_config" ]]; then
+    # daemon.json exists, update it
+    sudo jq --arg ip "$registry_ip" '. + { "insecure-registries": [ $ip ] }' $daemon_config | sudo tee $daemon_config > /dev/null
+  else
+    # daemon.json does not exist, create it
+    echo -e "{\n  \"insecure-registries\": [\"$registry_ip\"]\n}" | sudo tee $daemon_config > /dev/null
+  fi
+  
+  # Run docker without sudo
+  sudo usermod -aG docker $USER
+  # Restart Docker to apply changes
+  sudo systemctl restart docker
+}
+
 
 # Install and configure containerd
 install_containerd() {
@@ -136,6 +158,7 @@ initialize_kubernetes_environment() {
   install_dependencies
   enable_docker_repo
   install_docker
+  configure_docker_daemon
   install_containerd
   setup_kubernetes_repo
   install_kubernetes_components
